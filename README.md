@@ -2,7 +2,7 @@
 
 #### Diagrama Entidad Relación
 
-
+![DIAGRAMA](https://raw.githubusercontent.com/David-Albarracin/SCHOOL_DB/main/school.png)
 
 
 
@@ -203,18 +203,15 @@ ENGINE = InnoDB;
 
 ## INSERTAR DATOS DE PRUEBA
 
-
-
 Datos Extraídos de [DATOS SCHOOL](https://gist.github.com/josejuansanchez/291d56867bfe6ca0cfae2e2b9b671e78);
 
-Datos Formateados [DATOS FORMATEADOS](https://github.com/David-Albarracin/TALLER_DB3/blob/main/data_format.txt)
+Datos Formateados [CALLS PROCEDURES](https://github.com/David-Albarracin/SCHOOL_DB/blob/main/calls_procedures.sql)
 
-#### PROCEDIMIENTO PARA AGREGAR PRODUCTOS
+#### PROCEDIMIENTO Y FUNCIONES
 
 ```sql
+
 ```
-
-
 
 #### VISTAS PARA FACILITAR BÚSQUEDAS 
 
