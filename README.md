@@ -15,8 +15,189 @@ CREATE DATABASE school;
 
 ```sql
 -- CREAR TABLAS
-USE school; 
+USE `school` ;
 
+-- -----------------------------------------------------
+-- Table `school`.`gender`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `school`.`gender` (
+  `gender_id` VARCHAR(5) NOT NULL,
+  `actived` TINYINT NULL,
+  PRIMARY KEY (`gender_id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `school`.`department`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `school`.`department` (
+  `department_id` INT NOT NULL,
+  `department_name` VARCHAR(50) NULL,
+  PRIMARY KEY (`department_id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `school`.`teacher`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `school`.`teacher` (
+  `teacher_id` INT(10) NOT NULL,
+  `teacher_nit` VARCHAR(10) NULL,
+  `teacher_first_name` VARCHAR(50) NULL,
+  `teacher_last_name` VARCHAR(50) NULL,
+  `teacher_first_surname` VARCHAR(50) NULL,
+  `teacher_last_surname` VARCHAR(50) NULL,
+  `gender_id` VARCHAR(5) NOT NULL,
+  `department_id` INT NOT NULL,
+  `birthdate` DATE NULL,
+  `actived` TINYINT NULL,
+  PRIMARY KEY (`teacher_id`),
+  INDEX `fk_teacher_gender_idx` (`gender_id` ASC) VISIBLE,
+  INDEX `fk_teacher_department1_idx` (`department_id` ASC) VISIBLE,
+  CONSTRAINT `fk_teacher_gender`
+    FOREIGN KEY (`gender_id`)
+    REFERENCES `school`.`gender` (`gender_id`),
+  CONSTRAINT `fk_teacher_department1`
+    FOREIGN KEY (`department_id`)
+    REFERENCES `school`.`department` (`department_id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `school`.`student`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `school`.`student` (
+  `student_id` INT(10) NOT NULL,
+  `student_nit` VARCHAR(10) NULL,
+  `student_first_name` VARCHAR(50) NULL,
+  `student_last_name` VARCHAR(50) NULL,
+  `student_first_surname` VARCHAR(50) NULL,
+  `student_last_surname` VARCHAR(50) NULL,
+  `gender_id` VARCHAR(5) NOT NULL,
+  `birthdate` DATE NULL,
+  `actived` TINYINT NULL,
+  PRIMARY KEY (`student_id`),
+  INDEX `fk_student_gender1_idx` (`gender_id` ASC) VISIBLE,
+  CONSTRAINT `fk_student_gender1`
+    FOREIGN KEY (`gender_id`)
+    REFERENCES `school`.`gender` (`gender_id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `school`.`grade`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `school`.`grade` (
+  `grade_id` INT NOT NULL,
+  `grade_name` VARCHAR(100) NULL,
+  PRIMARY KEY (`grade_id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `school`.`course`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `school`.`course` (
+  `course_id` INT NOT NULL,
+  `course_name` VARCHAR(100) NULL,
+  `credits` FLOAT NULL,
+  `coursecol` VARCHAR(45) NULL,
+  `four_month_period` TINYINT NULL,
+  `teacher_id` INT(10) NOT NULL,
+  `grade_id` INT NOT NULL,
+  `type` ENUM('básica', 'obligatoria', 'optativa') NULL,
+  `course` TINYINT NULL,
+  PRIMARY KEY (`course_id`),
+  INDEX `fk_course_teacher1_idx` (`teacher_id` ASC) VISIBLE,
+  INDEX `fk_course_grade1_idx` (`grade_id` ASC) VISIBLE,
+  CONSTRAINT `fk_course_teacher1`
+    FOREIGN KEY (`teacher_id`)
+    REFERENCES `school`.`teacher` (`teacher_id`),
+  CONSTRAINT `fk_course_grade1`
+    FOREIGN KEY (`grade_id`)
+    REFERENCES `school`.`grade` (`grade_id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `school`.`school_year`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `school`.`school_year` (
+  `school_year_id` INT NOT NULL,
+  `start_year` YEAR NULL,
+  `end_year` YEAR NULL,
+  PRIMARY KEY (`school_year_id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `school`.`course_student`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `school`.`course_student` (
+  `student_id` INT(10) NOT NULL,
+  `course_id` INT NOT NULL,
+  `school_year_id` INT NOT NULL,
+  `actived` TINYINT NULL DEFAULT 1,
+  `created_at` DATETIME NULL DEFAULT NOW(),
+  `updated_at` DATETIME NULL DEFAULT NOW(),
+  INDEX `fk_course_student_student1_idx` (`student_id` ASC) VISIBLE,
+  INDEX `fk_course_student_course1_idx` (`course_id` ASC) VISIBLE,
+  INDEX `fk_course_student_school_year1_idx` (`school_year_id` ASC) VISIBLE,
+  CONSTRAINT `fk_course_student_student1`
+    FOREIGN KEY (`student_id`)
+    REFERENCES `school`.`student` (`student_id`),
+  CONSTRAINT `fk_course_student_course1`
+    FOREIGN KEY (`course_id`)
+    REFERENCES `school`.`course` (`course_id`),
+  CONSTRAINT `fk_course_student_school_year1`
+    FOREIGN KEY (`school_year_id`)
+    REFERENCES `school`.`school_year` (`school_year_id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `school`.`phone_number`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `school`.`phone_number` (
+  `phone_number_id` INT NOT NULL,
+  `phone_number` VARCHAR(45) NULL,
+  `phone_number_type` VARCHAR(45) NULL,
+  `phone_number_name` VARCHAR(45) NULL,
+  `teacher_id` INT(10) NULL DEFAULT NULL,
+  `student_id` INT(10) NULL DEFAULT NULL,
+  PRIMARY KEY (`phone_number_id`),
+  INDEX `fk_phone_number_teacher1_idx` (`teacher_id` ASC) VISIBLE,
+  INDEX `fk_phone_number_student1_idx` (`student_id` ASC) VISIBLE,
+  CONSTRAINT `fk_phone_number_teacher1`
+    FOREIGN KEY (`teacher_id`)
+    REFERENCES `school`.`teacher` (`teacher_id`),
+  CONSTRAINT `fk_phone_number_student1`
+    FOREIGN KEY (`student_id`)
+    REFERENCES `school`.`student` (`student_id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `school`.`address`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `school`.`address` (
+  `address_id` INT NOT NULL,
+  `address_line_1` VARCHAR(45) NULL,
+  `address_line_2` VARCHAR(45) NULL,
+  `city` VARCHAR(45) NULL,
+  `address_type` VARCHAR(45) NULL,
+  `teacher_id` INT(10) NULL DEFAULT NULL,
+  `student_id` INT(10) NULL DEFAULT NULL,
+  PRIMARY KEY (`address_id`),
+  INDEX `fk_address_teacher1_idx` (`teacher_id` ASC) VISIBLE,
+  INDEX `fk_address_student1_idx` (`student_id` ASC) VISIBLE,
+  CONSTRAINT `fk_address_teacher1`
+    FOREIGN KEY (`teacher_id`)
+    REFERENCES `school`.`teacher` (`teacher_id`),
+  CONSTRAINT `fk_address_student1`
+    FOREIGN KEY (`student_id`)
+    REFERENCES `school`.`student` (`student_id`))
+ENGINE = InnoDB;
 
 ```
 
