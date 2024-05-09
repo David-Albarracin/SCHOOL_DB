@@ -636,6 +636,107 @@ BEGIN
 END $$
 
 DELIMITER ;
+
+-- PROCEDIMIENTO PARA AGREGAR
+
+USE school;
+
+DROP PROCEDURE IF EXISTS add_city;
+
+DELIMITER $$
+
+CREATE PROCEDURE add_city(
+	ciudad VARCHAR(50)
+)
+BEGIN
+	DECLARE mensaje VARCHAR(100);
+	
+	INSERT INTO  
+		city(city_name)
+	VALUES 
+		(ciudad);
+
+	IF ROW_COUNT() > 0 THEN
+		SET mensaje = 'Se actualizó el registro correctamente.';
+	ELSE
+		SET mensaje = 'No se encontró ningún registro para actualizar.';
+	END IF;
+
+	SELECT mensaje AS Resultado;
+
+END $$
+
+DELIMITER ;
+
+-- PROCEDIMIENTO PARA AGREGAR
+
+USE school;
+
+DROP PROCEDURE IF EXISTS change_course_student;
+
+DELIMITER $$
+
+CREATE PROCEDURE change_course_student(
+	id_alumno INT,
+	id_asignatura INT
+)
+BEGIN
+	DECLARE mensaje VARCHAR(100);
+	
+	UPDATE  
+		course_student
+	SET 
+		actived = 0,
+		updated_at = NOW()
+	WHERE 
+		course_id = id_asignatura
+		AND 
+		student_id = id_alumno;
+		
+	IF ROW_COUNT() > 0 THEN
+		SET mensaje = 'Se actualizó el registro correctamente.';
+	ELSE
+		SET mensaje = 'No se encontró ningún registro para actualizar.';
+	END IF;
+
+	SELECT mensaje AS Resultado;
+
+END $$
+
+DELIMITER ;
+
+-- PROCEDIMIENTO PARA AGREGAR
+
+USE school;
+
+DROP PROCEDURE IF EXISTS add_gender;
+
+DELIMITER $$
+
+CREATE PROCEDURE add_gender(
+	IN genero VARCHAR(10)
+)
+BEGIN
+	DECLARE mensaje VARCHAR(100);
+	
+	INSERT INTO  
+		gender(gender_id, actived)
+	VALUES( 
+		genero, 1
+	);
+		
+	IF ROW_COUNT() > 0 THEN
+		SET mensaje = 'Se actualizó el registro correctamente.';
+	ELSE
+		SET mensaje = 'No se encontró ningún registro para actualizar.';
+	END IF;
+
+	SELECT mensaje AS Resultado;
+
+END $$
+
+DELIMITER ;
+
 ```
 
 #### VISTAS PARA FACILITAR BÚSQUEDAS 
@@ -794,7 +895,77 @@ GROUP BY
 	t.teacher_first_surname,
 	t.teacher_first_name
 ;
+-- VISTA PARA FACILITAR LAS BUSQUEDAS
+USE school;
 
+DROP VIEW IF EXISTS c_student_data;
+
+CREATE VIEW c_student_data AS
+SELECT
+	CONCAT(
+		student_first_surname,
+		' ',
+		student_last_surname,
+		' ', 
+		student_first_name
+	) AS estudiante
+FROM 
+	student_data
+ORDER BY
+	estudiante ASC;
+	
+	
+-- VISTA PARA FACILITAR LAS BUSQUEDAS
+USE school;
+
+DROP VIEW IF EXISTS teacher_k_nit;
+
+CREATE VIEW teacher_k_nit AS
+SELECT 
+	nit,
+	teacher_first_name,
+	phone_number
+FROM 
+	teacher_data 
+WHERE 
+	phone_number IS NULL
+	AND 
+	nit LIKE '%K';
+	
+
+-- VISTA PARA FACILITAR LAS BUSQUEDAS
+USE school;
+
+DROP VIEW IF EXISTS student_year_course;
+
+CREATE VIEW student_year_course AS
+SELECT 
+	s.student_first_name,
+	sy.start_year,
+	sy.end_year
+FROM 
+	student AS s
+INNER JOIN
+	course_student AS cs ON cs.student_id = s.student_id 
+INNER JOIN 
+	school_year AS sy ON sy.school_year_id  = cs.school_year_id  
+;
+
+-- VISTA PARA FACILITAR LAS BUSQUEDAS
+USE school;
+
+DROP VIEW IF EXISTS student_year_course;
+
+CREATE VIEW student_year_course AS
+SELECT DISTINCT  
+	t.teacher_first_name,
+	c.course_name 
+FROM 
+	course AS c
+LEFT JOIN
+	teacher AS t ON t.teacher_id = c.teacher_id 
+WHERE 
+	c.teacher_id IS NULL;
 ```
 
 
