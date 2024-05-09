@@ -1,4 +1,6 @@
- /* Departamento */
+USE school;
+
+/* Departamento */
 CALL add_departamento (1, 'Informática');
 CALL add_departamento (2, 'Matemáticas');
 CALL add_departamento (3, 'Economía y Empresa');
