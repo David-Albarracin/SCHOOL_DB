@@ -723,6 +723,77 @@ LEFT JOIN
 LEFT JOIN 
 	grade AS g ON g.grade_id = c.grade_id;
 	
+-- VISTA PARA FACILITAR LAS BUSQUEDAS DE LOS DEPARTAMENTOS
+USE school;
+
+DROP VIEW IF EXISTS department_teacher;
+
+CREATE VIEW department_teacher AS
+SELECT
+	d.department_id,
+	t.teacher_id,
+	t.teacher_first_name
+FROM 
+	department AS d
+LEFT JOIN
+	teacher AS t ON d.department_id = t.department_id
+
+;
+
+-- VISTA PARA FACILITAR RESUMEN DE LOS CREDITOS
+USE school;
+
+DROP VIEW IF EXISTS grade_total_credits;
+
+CREATE VIEW grade_total_credits AS
+SELECT
+	g.grade_name,
+	c.course_name,
+	SUM(c.credits) AS 'total_credits'
+FROM 
+	grade AS g
+INNER JOIN
+	course AS c ON c.grade_id = g.grade_id
+GROUP BY 
+	g.grade_name,
+	c.course_name;
+	
+-- VISTA PARA FACILITAR RESUMEN DE LOS ESTUDIANTES POR AÑO
+USE school;
+
+DROP VIEW IF EXISTS course_student_count;
+
+CREATE VIEW course_student_count AS
+SELECT
+	sy.start_year,
+	COUNT(cs.student_id) AS 'n_estudiantes'
+FROM 
+	school_year AS sy 
+INNER JOIN
+	course_student AS cs ON cs.school_year_id = sy.school_year_id
+GROUP BY 
+	sy.start_year;
+	
+-- VISTA PARA FACILITAR RESUMEN DE LOS PROFESORES Y SUS ASIGNATURAS
+USE school;
+
+DROP VIEW IF EXISTS course_teacher_count;
+
+CREATE VIEW course_teacher_count AS
+SELECT
+	t.teacher_id,
+	t.teacher_first_surname,
+	t.teacher_first_name,
+	COUNT(c.course_id) AS 'n_asignaturas'
+FROM 
+	teacher AS t
+LEFT JOIN
+	course AS c ON  c.teacher_id = t.teacher_id 
+GROUP BY 
+	t.teacher_id,
+	t.teacher_first_surname,
+	t.teacher_first_name
+;
 
 ```
 
@@ -1060,28 +1131,205 @@ LEFT JOIN y NATURAL RIGHT JOIN.
    apellidos y el nombre.
 
    ```sql
+   SELECT
+   	department_name,
+   	teacher_first_surname,
+   	teacher_last_surname
+   	teacher_first_name
+   FROM
+   	department_teacher
+   ORDER BY
+   	department_name
+   	OR
+   	teacher_first_surname
+   	OR
+   	teacher_first_name;
+   
+   +-----------------------+------------+------------+-----------+
+   | departamento          | apellido   | segundo    | Nombre    |
+   +-----------------------+------------+------------+-----------+
+   | Biología y Geología   | NULL       | NULL       | NULL      |
+   | Derecho               | NULL       | NULL       | NULL      |
+   | Filología             | NULL       | NULL       | NULL      |
+   | Educación             | Spencer    | Lakin      | Esther    |
+   | Química y Física      | Schowalter | Muller     | Francesca |
+   | Química y Física      | Stiedemann | Morissette | Alfredo   |
+   | Agronomía             | Monahan    | Murray     | Micaela   |
+   | Educación             | Ruecker    | Upton      | Guillermo |
+   | Educación             | Streich    | Hirthe     | Carmen    |
+   | Informática           | Ramirez    | Gea        | Zoe       |
+   | Economía y Empresa    | Fahey      | Considine  | Antonio   |
+   | Economía y Empresa    | Lemke      | Rutherford | Cristina  |
+   | Matemáticas           | Domínguez  | Hernández  | María     |
+   | Matemáticas           | Kohler     | Schoen     | Alejandro |
+   | Matemáticas           | Schmidt    | Fisher     | David     |
+   | Informática           | Guerrero   | Martínez   | Juan      |
+   | Informática           | Sánchez    | Ruiz       | Pepe      |
+   | Informática           | Hamill     | Kozey      | Manolo    |
+   +-----------------------+------------+------------+-----------+
+   18 rows in set, 48 warnings (0,00 sec)
+   
    ```
-
+   
 2. Devuelve un listado con los profesores que no están asociados a un
    departamento.
 
    ```sql
+   SELECT
+   	department_name,
+   	teacher_first_surname
+   FROM
+   	department_teacher
+   WHERE 
+   	department_name IS NULL;
    ```
-
+   
 3. Devuelve un listado con los departamentos que no tienen profesores
    asociados.
 
    ```sql
+   SELECT
+   	department_name
+   FROM
+   	department_teacher
+   WHERE 
+   	teacher_first_surname IS NULL;
+   	
+   +-----------------------+
+   | department_name       |
+   +-----------------------+
+   | Filología             |
+   | Derecho               |
+   | Biología y Geología   |
+   +-----------------------+
+   3 rows in set (0,00 sec)
    ```
-
+   
 4. Devuelve un listado con los profesores que no imparten ninguna asignatura.
 
    ```sql
+   SELECT DISTINCT  
+   	t.teacher_first_name,
+   	c.course_name 
+   FROM 
+   	course AS c
+   RIGHT JOIN
+   	teacher AS t ON t.teacher_id = c.teacher_id 
+   WHERE 
+   	c.teacher_id IS NULL;
+   	
+   +--------------------+-------------+
+   | teacher_first_name | course_name |
+   +--------------------+-------------+
+   | David              | NULL        |
+   | Cristina           | NULL        |
+   | Esther             | NULL        |
+   | Carmen             | NULL        |
+   | Alfredo            | NULL        |
+   | Alejandro          | NULL        |
+   | Antonio            | NULL        |
+   | Guillermo          | NULL        |
+   | Micaela            | NULL        |
+   | Francesca          | NULL        |
+   | Pepe               | NULL        |
+   | Juan               | NULL        |
+   | María              | NULL        |
+   +--------------------+-------------+
+   13 rows in set (0,00 sec)
+   
    ```
 
 5. Devuelve un listado con las asignaturas que no tienen un profesor asignado.
 
    ```sql
+   SELECT DISTINCT  
+   	t.teacher_first_name,
+   	c.course_name 
+   FROM 
+   	course AS c
+   LEFT JOIN
+   	teacher AS t ON t.teacher_id = c.teacher_id 
+   WHERE 
+   	c.teacher_id IS NULL;
+   	
+   +--------------------+---------------------------------------------------------+
+   | teacher_first_name | course_name                                             |
+   +--------------------+---------------------------------------------------------+
+   | NULL               | Álgegra lineal y matemática discreta                    |
+   | NULL               | Cálculo                                                 |
+   | NULL               | Física para informática                                 |
+   | NULL               | Introducción a la programación                          |
+   | NULL               | Organización y gestión de empresas                      |
+   | NULL               | Estadística                                             |
+   | NULL               | Estructura y tecnología de computadores                 |
+   | NULL               | Fundamentos de electrónica                              |
+   | NULL               | Lógica y algorítmica                                    |
+   | NULL               | Metodología de la programación                          |
+   | NULL               | Ingeniería de Requisitos                                |
+   | NULL               | Modelado y Diseño del Software 1                        |
+   | NULL               | Multiprocesadores                                       |
+   | NULL               | Seguridad y cumplimiento normativo                      |
+   | NULL               | Sistema de Información para las Organizaciones          |
+   | NULL               | Tecnologías web                                         |
+   | NULL               | Teoría de códigos y criptografía                        |
+   | NULL               | Administración de bases de datos                        |
+   | NULL               | Herramientas y Métodos de Ingeniería del Software       |
+   | NULL               | Informática industrial y robótica                       |
+   | NULL               | Ingeniería de Sistemas de Información                   |
+   | NULL               | Modelado y Diseño del Software 2                        |
+   | NULL               | Negocio Electrónico                                     |
+   | NULL               | Periféricos e interfaces                                |
+   | NULL               | Sistemas de tiempo real                                 |
+   | NULL               | Tecnologías de acceso a red                             |
+   | NULL               | Tratamiento digital de imágenes                         |
+   | NULL               | Administración de redes y sistemas operativos           |
+   | NULL               | Almacenes de Datos                                      |
+   | NULL               | Fiabilidad y Gestión de Riesgos                         |
+   | NULL               | Líneas de Productos Software                            |
+   | NULL               | Procesos de Ingeniería del Software 1                   |
+   | NULL               | Tecnologías multimedia                                  |
+   | NULL               | Análisis y planificación de las TI                      |
+   | NULL               | Desarrollo Rápido de Aplicaciones                       |
+   | NULL               | Gestión de la Calidad y de la Innovación Tecnológica    |
+   | NULL               | Inteligencia del Negocio                                |
+   | NULL               | Procesos de Ingeniería del Software 2                   |
+   | NULL               | Seguridad Informática                                   |
+   | NULL               | Biologia celular                                        |
+   | NULL               | Física                                                  |
+   | NULL               | Matemáticas I                                           |
+   | NULL               | Química general                                         |
+   | NULL               | Química orgánica                                        |
+   | NULL               | Biología vegetal y animal                               |
+   | NULL               | Bioquímica                                              |
+   | NULL               | Genética                                                |
+   | NULL               | Matemáticas II                                          |
+   | NULL               | Microbiología                                           |
+   | NULL               | Botánica agrícola                                       |
+   | NULL               | Fisiología vegetal                                      |
+   | NULL               | Genética molecular                                      |
+   | NULL               | Ingeniería bioquímica                                   |
+   | NULL               | Termodinámica y cinética química aplicada               |
+   | NULL               | Biorreactores                                           |
+   | NULL               | Biotecnología microbiana                                |
+   | NULL               | Ingeniería genética                                     |
+   | NULL               | Inmunología                                             |
+   | NULL               | Virología                                               |
+   | NULL               | Bases moleculares del desarrollo vegetal                |
+   | NULL               | Fisiología animal                                       |
+   | NULL               | Metabolismo y biosíntesis de biomoléculas               |
+   | NULL               | Operaciones de separación                               |
+   | NULL               | Patología molecular de plantas                          |
+   | NULL               | Técnicas instrumentales básicas                         |
+   | NULL               | Bioinformática                                          |
+   | NULL               | Biotecnología de los productos hortofrutículas          |
+   | NULL               | Biotecnología vegetal                                   |
+   | NULL               | Genómica y proteómica                                   |
+   | NULL               | Procesos biotecnológicos                                |
+   | NULL               | Técnicas instrumentales avanzadas                       |
+   +--------------------+---------------------------------------------------------+
+   72 rows in set (0,00 sec)
+   
+   
    ```
 
 6. Devuelve un listado con todos los departamentos que tienen alguna
@@ -1090,6 +1338,38 @@ LEFT JOIN y NATURAL RIGHT JOIN.
    no se haya impartido nunca.
 
    ```sql
+   SELECT
+   	d.department_name,
+   	c.course_name
+   FROM 
+   	department AS d 
+   RIGHT JOIN
+   	teacher AS t ON t.department_id = d.department_id 
+   RIGHT JOIN 
+   	course AS c ON c.teacher_id = t.teacher_id 
+   LEFT JOIN 
+   	course_student AS cs ON cs.course_id = c.course_id 
+   WHERE 
+   	cs.student_id IS NULL 
+   	AND 
+   	d.department_name IS NOT NULL;
+   	
+   +-----------------+------------------------------------------------------+
+   | department_name | course_name                                          |
+   +-----------------+------------------------------------------------------+
+   | Informática     | Arquitectura de Computadores                         |
+   | Informática     | Estructura de Datos y Algoritmos I                   |
+   | Informática     | Ingeniería del Software                              |
+   | Informática     | Sistemas Inteligentes                                |
+   | Informática     | Sistemas Operativos                                  |
+   | Informática     | Bases de Datos                                       |
+   | Informática     | Estructura de Datos y Algoritmos II                  |
+   | Informática     | Fundamentos de Redes de Computadores                 |
+   | Informática     | Planificación y Gestión de Proyectos Informáticos    |
+   | Informática     | Programación de Servicios Software                   |
+   | Informática     | Desarrollo de interfaces de usuario                  |
+   +-----------------+------------------------------------------------------+
+   11 rows in set (0,00 sec)
    
    ```
 
@@ -1098,11 +1378,43 @@ LEFT JOIN y NATURAL RIGHT JOIN.
 1. Devuelve el número total de alumnas que hay.
 
    ```sql
+   SELECT 
+   	COUNT(s.student_id) AS 'Numero de Mujeres'
+   FROM 
+   	student AS s 
+   WHERE 
+   	s.gender_id = 'M'
+   ;
+   
+   
+   +-------------------+
+   | Numero de Mujeres |
+   +-------------------+
+   |                 3 |
+   +-------------------+
+   1 row in set (0,00 sec)
+   
+   
    ```
 
 2. Calcula cuántos alumnos nacieron en 1999.
 
    ```sql
+   SELECT 
+   	COUNT(s.student_id) AS 'birthdate 1999'
+   FROM 
+   	student AS s 
+   WHERE 
+   	YEAR(s.birthdate) = '1999' 
+   ;
+   
+   +----------------+
+   | birthdate 1999 |
+   +----------------+
+   |              2 |
+   +----------------+
+   1 row in set (0,00 sec)
+   
    ```
 
 3. Calcula cuántos profesores hay en cada departamento. El resultado sólo
@@ -1112,16 +1424,68 @@ LEFT JOIN y NATURAL RIGHT JOIN.
    deberá estar ordenado de mayor a menor por el número de profesores.
 
    ```sql
+   SELECT
+   	d.department_name,
+   	COUNT(t.teacher_id) AS n_profesores
+   FROM 
+   	department AS d
+   INNER JOIN
+   	teacher AS t ON t.department_id = d.department_id 
+   GROUP BY 
+   	d.department_name 
+   ORDER BY 
+   	n_profesores
+   ;
+   
+   +---------------------+--------------+
+   | department_name     | n_profesores |
+   +---------------------+--------------+
+   | Agronomía           |            1 |
+   | Economía y Empresa  |            2 |
+   | Química y Física    |            2 |
+   | Matemáticas         |            3 |
+   | Educación           |            3 |
+   | Informática         |            4 |
+   +---------------------+--------------+
+   6 rows in set (0,00 sec)
+   
    ```
-
+   
 4. Devuelve un listado con todos los departamentos y el número de profesores
    que hay en cada uno de ellos. Tenga en cuenta que pueden existir
    departamentos que no tienen profesores asociados. Estos departamentos
    también tienen que aparecer en el listado.
 
    ```sql
+   SELECT
+   	d.department_name,
+   	COUNT(t.teacher_id) AS n_profesores
+   FROM 
+   	department AS d
+   LEFT JOIN
+   	teacher AS t ON t.department_id = d.department_id 
+   GROUP BY 
+   	d.department_name 
+   ORDER BY 
+   	n_profesores
+   ;
+   +-----------------------+--------------+
+   | department_name       | n_profesores |
+   +-----------------------+--------------+
+   | Filología             |            0 |
+   | Derecho               |            0 |
+   | Biología y Geología   |            0 |
+   | Agronomía             |            1 |
+   | Economía y Empresa    |            2 |
+   | Química y Física      |            2 |
+   | Matemáticas           |            3 |
+   | Educación             |            3 |
+   | Informática           |            4 |
+   +-----------------------+--------------+
+   9 rows in set (0,00 sec)
+   
    ```
-
+   
 5. Devuelve un listado con el nombre de todos los grados existentes en la base
    de datos y el número de asignaturas que tiene cada uno. Tenga en cuenta
 
@@ -1130,15 +1494,68 @@ LEFT JOIN y NATURAL RIGHT JOIN.
    ordenado de mayor a menor por el número de asignaturas.
 
    ```sql
+   SELECT
+   	g.grade_name ,
+   	COUNT(c.course_name) AS n_cursos
+   FROM 
+   	grade AS g
+   LEFT JOIN
+   	course AS c ON c.grade_id = g.grade_id 
+   GROUP BY 
+   	g.grade_name 
+   ORDER BY 
+   	n_cursos
+   ;
+   
+   +----------------------------------------------------------+----------+
+   | grade_name                                               | n_cursos |
+   +----------------------------------------------------------+----------+
+   | Grado en Ingeniería Agrícola (Plan 2015)                 |        0 |
+   | Grado en Ingeniería Eléctrica (Plan 2014)                |        0 |
+   | Grado en Ingeniería Electrónica Industrial (Plan 2010)   |        0 |
+   | Grado en Ingeniería Mecánica (Plan 2010)                 |        0 |
+   | Grado en Ingeniería Química Industrial (Plan 2010)       |        0 |
+   | Grado en Ciencias Ambientales (Plan 2009)                |        0 |
+   | Grado en Matemáticas (Plan 2010)                         |        0 |
+   | Grado en Química (Plan 2009)                             |        0 |
+   | Grado en Biotecnología (Plan 2015)                       |       32 |
+   | Grado en Ingeniería Informática (Plan 2015)              |       51 |
+   +----------------------------------------------------------+----------+
+   10 rows in set (0,00 sec)
+   
+   
    ```
-
+   
 6. Devuelve un listado con el nombre de todos los grados existentes en la base
    de datos y el número de asignaturas que tiene cada uno, de los grados que
    tengan más de 40 asignaturas asociadas.
 
    ```sql
+   SELECT
+   	g.grade_name ,
+   	COUNT(c.course_name) AS n_cursos
+   FROM 
+   	grade AS g
+   LEFT JOIN
+   	course AS c ON c.grade_id = g.grade_id 
+   GROUP BY 
+   	g.grade_name 
+   HAVING 
+   	n_cursos > 40
+   ORDER BY 
+   	n_cursos
+   
+   ;
+   
+   +-----------------------------------------------+----------+
+   | grade_name                                    | n_cursos |
+   +-----------------------------------------------+----------+
+   | Grado en Ingeniería Informática (Plan 2015)   |       51 |
+   +-----------------------------------------------+----------+
+   1 row in set (0,00 sec)
+   
    ```
-
+   
 7. Devuelve un listado que muestre el nombre de los grados y la suma del
    número total de créditos que hay para cada tipo de asignatura. El resultado
    debe tener tres columnas: nombre del grado, tipo de asignatura y la suma
@@ -1146,16 +1563,128 @@ LEFT JOIN y NATURAL RIGHT JOIN.
    resultado de mayor a menor por el número total de crédidos.
 
    ```sql
+   SELECT 
+   	grade_name,
+   	course_name,
+   	total_credits 
+   FROM 
+   	grade_total_credits;
+   	
+   +-----------------------------------------------+---------------------------------------------------------------------------+---------------+
+   | grade_name                                    | course_name                                                               | total_credits |
+   +-----------------------------------------------+---------------------------------------------------------------------------+---------------+
+   | Grado en Ingeniería Informática (Plan 2015)   | Álgegra lineal y matemática discreta                                      |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Cálculo                                                                   |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Física para informática                                                   |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Introducción a la programación                                            |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Organización y gestión de empresas                                        |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Estadística                                                               |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Estructura y tecnología de computadores                                   |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Fundamentos de electrónica                                                |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Lógica y algorítmica                                                      |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Metodología de la programación                                            |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Arquitectura de Computadores                                              |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Estructura de Datos y Algoritmos I                                        |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Ingeniería del Software                                                   |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Sistemas Inteligentes                                                     |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Sistemas Operativos                                                       |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Bases de Datos                                                            |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Estructura de Datos y Algoritmos II                                       |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Fundamentos de Redes de Computadores                                      |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Planificación y Gestión de Proyectos Informáticos                         |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Programación de Servicios Software                                        |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Desarrollo de interfaces de usuario                                       |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Ingeniería de Requisitos                                                  |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Integración de las Tecnologías de la Información en las Organizaciones    |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Modelado y Diseño del Software 1                                          |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Multiprocesadores                                                         |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Seguridad y cumplimiento normativo                                        |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Sistema de Información para las Organizaciones                            |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Tecnologías web                                                           |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Teoría de códigos y criptografía                                          |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Administración de bases de datos                                          |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Herramientas y Métodos de Ingeniería del Software                         |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Informática industrial y robótica                                         |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Ingeniería de Sistemas de Información                                     |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Modelado y Diseño del Software 2                                          |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Negocio Electrónico                                                       |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Periféricos e interfaces                                                  |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Sistemas de tiempo real                                                   |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Tecnologías de acceso a red                                               |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Tratamiento digital de imágenes                                           |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Administración de redes y sistemas operativos                             |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Almacenes de Datos                                                        |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Fiabilidad y Gestión de Riesgos                                           |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Líneas de Productos Software                                              |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Procesos de Ingeniería del Software 1                                     |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Tecnologías multimedia                                                    |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Análisis y planificación de las TI                                        |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Desarrollo Rápido de Aplicaciones                                         |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Gestión de la Calidad y de la Innovación Tecnológica                      |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Inteligencia del Negocio                                                  |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Procesos de Ingeniería del Software 2                                     |             6 |
+   | Grado en Ingeniería Informática (Plan 2015)   | Seguridad Informática                                                     |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Biologia celular                                                          |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Física                                                                    |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Matemáticas I                                                             |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Química general                                                           |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Química orgánica                                                          |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Biología vegetal y animal                                                 |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Bioquímica                                                                |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Genética                                                                  |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Matemáticas II                                                            |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Microbiología                                                             |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Botánica agrícola                                                         |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Fisiología vegetal                                                        |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Genética molecular                                                        |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Ingeniería bioquímica                                                     |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Termodinámica y cinética química aplicada                                 |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Biorreactores                                                             |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Biotecnología microbiana                                                  |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Ingeniería genética                                                       |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Inmunología                                                               |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Virología                                                                 |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Bases moleculares del desarrollo vegetal                                  |           4.5 |
+   | Grado en Biotecnología (Plan 2015)            | Fisiología animal                                                         |           4.5 |
+   | Grado en Biotecnología (Plan 2015)            | Metabolismo y biosíntesis de biomoléculas                                 |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Operaciones de separación                                                 |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Patología molecular de plantas                                            |           4.5 |
+   | Grado en Biotecnología (Plan 2015)            | Técnicas instrumentales básicas                                           |           4.5 |
+   | Grado en Biotecnología (Plan 2015)            | Bioinformática                                                            |           4.5 |
+   | Grado en Biotecnología (Plan 2015)            | Biotecnología de los productos hortofrutículas                            |           4.5 |
+   | Grado en Biotecnología (Plan 2015)            | Biotecnología vegetal                                                     |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Genómica y proteómica                                                     |           4.5 |
+   | Grado en Biotecnología (Plan 2015)            | Procesos biotecnológicos                                                  |             6 |
+   | Grado en Biotecnología (Plan 2015)            | Técnicas instrumentales avanzadas                                         |           4.5 |
+   +-----------------------------------------------+---------------------------------------------------------------------------+---------------+
+   83 rows in set (0,00 sec)
+   
    ```
-
+   
 8. Devuelve un listado que muestre cuántos alumnos se han matriculado de
    alguna asignatura en cada uno de los cursos escolares. El resultado deberá
    mostrar dos columnas, una columna con el año de inicio del curso escolar y
    otra con el número de alumnos matriculados.
 
    ```sql
+   SELECT 
+   	start_year, 
+   	n_estudiantes 
+   FROM 
+   	course_student_count;
+   	
+   +------------+---------------+
+   | start_year | n_estudiantes |
+   +------------+---------------+
+   |       2014 |            16 |
+   |       2015 |            13 |
+   |       2016 |             3 |
+   |       2017 |             3 |
+   +------------+---------------+
+   4 rows in set (0,00 sec)
+   
    ```
-
+   
 9. Devuelve un listado con el número de asignaturas que imparte cada
    profesor. El listado debe tener en cuenta aquellos profesores que no
    imparten ninguna asignatura. El resultado mostrará cinco columnas: id,
@@ -1163,6 +1692,36 @@ LEFT JOIN y NATURAL RIGHT JOIN.
    resultado estará ordenado de mayor a menor por el número de asignaturas.
 
    ```sql
+   SELECT 
+   	teacher_id,
+   	teacher_first_surname,
+   	Teacher_first_name,
+   	n_asignaturas
+   FROM 
+   	course_teacher_count
+   ORDER BY
+   	n_asignaturas DESC;
+   	
+   +------------+-----------------------+--------------------+---------------+
+   | teacher_id | teacher_first_surname | Teacher_first_name | n_asignaturas |
+   +------------+-----------------------+--------------------+---------------+
+   |         14 | Hamill                | Manolo             |             6 |
+   |          3 | Ramirez               | Zoe                |             5 |
+   |          5 | Schmidt               | David              |             0 |
+   |          8 | Lemke                 | Cristina           |             0 |
+   |         10 | Spencer               | Esther             |             0 |
+   |         12 | Streich               | Carmen             |             0 |
+   |         13 | Stiedemann            | Alfredo            |             0 |
+   |         15 | Kohler                | Alejandro          |             0 |
+   |         16 | Fahey                 | Antonio            |             0 |
+   |         17 | Ruecker               | Guillermo          |             0 |
+   |         18 | Monahan               | Micaela            |             0 |
+   |         20 | Schowalter            | Francesca          |             0 |
+   |         21 | Sánchez               | Pepe               |             0 |
+   |         22 | Guerrero              | Juan               |             0 |
+   |         23 | Domínguez             | María              |             0 |
+   +------------+-----------------------+--------------------+---------------+
+   15 rows in set (0,00 sec)
    
    ```
 
@@ -1171,35 +1730,249 @@ LEFT JOIN y NATURAL RIGHT JOIN.
 1. Devuelve todos los datos del alumno más joven.
 
    ```sql
+   SELECT
+   	s.student_first_name
+   FROM 
+   	student AS s 
+   WHERE 
+   	s.birthdate = (
+   		SELECT 
+   			MAX(s2.birthdate)
+   		FROM
+   			student AS s2 
+   	);
+   	
+   +--------------------+
+   | student_first_name |
+   +--------------------+
+   | Pedro              |
+   +--------------------+
+   1 row in set (0,00 sec)
+   
    ```
 
 2. Devuelve un listado con los profesores que no están asociados a un
    departamento.
 
    ```sql
+   SELECT
+   	t.teacher_first_name 
+   FROM 
+   	teacher AS t
+   WHERE 
+   	t.department_id NOT IN (
+   		SELECT 
+   			d.department_id 
+   		FROM
+   			department AS d 
+   	);
    ```
-
+   
 3. Devuelve un listado con los departamentos que no tienen profesores
    asociados.
 
    ```sql
+   SELECT
+   	d.department_name 
+   FROM 
+   	department AS d
+   WHERE 
+   	d.department_id NOT IN (
+   		SELECT 
+   			t.teacher_id
+   		FROM
+   			teacher AS t 
+   	);
+   	
+   +-----------------------+
+   | department_name       |
+   +-----------------------+
+   | Informática           |
+   | Matemáticas           |
+   | Educación             |
+   | Química y Física      |
+   | Filología             |
+   | Biología y Geología   |
+   +-----------------------+
+   6 rows in set (0,00 sec)
+   
+   
    ```
-
+   
 4. Devuelve un listado con los profesores que tienen un departamento
    asociado y que no imparten ninguna asignatura.
 
    ```sql
+   SELECT
+   	t.teacher_first_name 
+   FROM 
+   	teacher AS t
+   WHERE 
+   	t.department_id IN (
+   		SELECT 
+   			d.department_id 
+   		FROM
+   			department AS d 
+   	)AND
+   	t.teacher_id NOT IN (
+   		SELECT 
+   			c.teacher_id	
+   		FROM 
+   			course AS c
+   		WHERE
+   			c.teacher_id IS NOT NULL 
+   	);
+   	
+   +--------------------+
+   | teacher_first_name |
+   +--------------------+
+   | David              |
+   | Cristina           |
+   | Esther             |
+   | Carmen             |
+   | Alfredo            |
+   | Alejandro          |
+   | Antonio            |
+   | Guillermo          |
+   | Micaela            |
+   | Francesca          |
+   | Pepe               |
+   | Juan               |
+   | María              |
+   +--------------------+
+   13 rows in set (0,00 sec)
+   
    ```
-
+   
 5. Devuelve un listado con las asignaturas que no tienen un profesor asignado.
 
    ```sql
+   SELECT 
+   	c.course_name 
+   FROM 
+   	course AS c
+   WHERE 
+   	c.course_id NOT IN(
+   		SELECT 
+   			c2.course_id 
+   		FROM 
+   			course AS c2
+   		WHERE 
+   			c2.teacher_id IS NOT NULL
+   	);
+   +---------------------------------------------------------------------------+
+   | course_name                                                               |
+   +---------------------------------------------------------------------------+
+   | Álgegra lineal y matemática discreta                                      |
+   | Cálculo                                                                   |
+   | Física para informática                                                   |
+   | Introducción a la programación                                            |
+   | Organización y gestión de empresas                                        |
+   | Estadística                                                               |
+   | Estructura y tecnología de computadores                                   |
+   | Fundamentos de electrónica                                                |
+   | Lógica y algorítmica                                                      |
+   | Metodología de la programación                                            |
+   | Ingeniería de Requisitos                                                  |
+   | Integración de las Tecnologías de la Información en las Organizaciones    |
+   | Modelado y Diseño del Software 1                                          |
+   | Multiprocesadores                                                         |
+   | Seguridad y cumplimiento normativo                                        |
+   | Sistema de Información para las Organizaciones                            |
+   | Tecnologías web                                                           |
+   | Teoría de códigos y criptografía                                          |
+   | Administración de bases de datos                                          |
+   | Herramientas y Métodos de Ingeniería del Software                         |
+   | Informática industrial y robótica                                         |
+   | Ingeniería de Sistemas de Información                                     |
+   | Modelado y Diseño del Software 2                                          |
+   | Negocio Electrónico                                                       |
+   | Periféricos e interfaces                                                  |
+   | Sistemas de tiempo real                                                   |
+   | Tecnologías de acceso a red                                               |
+   | Tratamiento digital de imágenes                                           |
+   | Administración de redes y sistemas operativos                             |
+   | Almacenes de Datos                                                        |
+   | Fiabilidad y Gestión de Riesgos                                           |
+   | Líneas de Productos Software                                              |
+   | Procesos de Ingeniería del Software 1                                     |
+   | Tecnologías multimedia                                                    |
+   | Análisis y planificación de las TI                                        |
+   | Desarrollo Rápido de Aplicaciones                                         |
+   | Gestión de la Calidad y de la Innovación Tecnológica                      |
+   | Inteligencia del Negocio                                                  |
+   | Procesos de Ingeniería del Software 2                                     |
+   | Seguridad Informática                                                     |
+   | Biologia celular                                                          |
+   | Física                                                                    |
+   | Matemáticas I                                                             |
+   | Química general                                                           |
+   | Química orgánica                                                          |
+   | Biología vegetal y animal                                                 |
+   | Bioquímica                                                                |
+   | Genética                                                                  |
+   | Matemáticas II                                                            |
+   | Microbiología                                                             |
+   | Botánica agrícola                                                         |
+   | Fisiología vegetal                                                        |
+   | Genética molecular                                                        |
+   | Ingeniería bioquímica                                                     |
+   | Termodinámica y cinética química aplicada                                 |
+   | Biorreactores                                                             |
+   | Biotecnología microbiana                                                  |
+   | Ingeniería genética                                                       |
+   | Inmunología                                                               |
+   | Virología                                                                 |
+   | Bases moleculares del desarrollo vegetal                                  |
+   | Fisiología animal                                                         |
+   | Metabolismo y biosíntesis de biomoléculas                                 |
+   | Operaciones de separación                                                 |
+   | Patología molecular de plantas                                            |
+   | Técnicas instrumentales básicas                                           |
+   | Bioinformática                                                            |
+   | Biotecnología de los productos hortofrutículas                            |
+   | Biotecnología vegetal                                                     |
+   | Genómica y proteómica                                                     |
+   | Procesos biotecnológicos                                                  |
+   | Técnicas instrumentales avanzadas                                         |
+   +---------------------------------------------------------------------------+
+   72 rows in set (0,01 sec)
+   
    ```
 
 6. Devuelve un listado con todos los departamentos que no han impartido
    asignaturas en ningún curso escolar.
 
    ```sql
+   SELECT 
+   	department_name
+   FROM 
+   	department
+   WHERE 
+   	department_id NOT IN (
+       	SELECT DISTINCT 
+       		d.department_id
+       	FROM 
+       		department AS d
+       	JOIN 
+       		teacher AS t ON d.department_id = t.department_id
+       	JOIN 
+       		course AS c ON t.teacher_id = c.teacher_id
+   );
+   
+   +-----------------------+
+   | department_name       |
+   +-----------------------+
+   | Matemáticas           |
+   | Economía y Empresa    |
+   | Educación             |
+   | Agronomía             |
+   | Química y Física      |
+   | Filología             |
+   | Derecho               |
+   | Biología y Geología   |
+   +-----------------------+
+   8 rows in set (0,01 sec)
    
    ```
 
